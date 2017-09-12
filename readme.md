@@ -2,7 +2,8 @@ Steps for working on GIT in Linux terminal :
 
 1) Search for this : https://github.com/shivam5594/CMPE-220
 
-click on fork button on top right corner, and then login in with your GitHub account. This will create a copy of my project in your account.
+click on fork button on top right corner, and then login in with your GitHub account. 
+This will create a copy of my project in your account.
 
 2) Watch following YouTube instructions and make try compiling the code.
 
