@@ -18,6 +18,6 @@ git clone "the https: link"
 
 4) work on the driver and upload them back on your account by terminal commands shown below in given sequence
 
-git add .
-git commit -m " any comments you want to write to help the reader "
+git add .	|
+git commit -m " any comments you want to write to help the reader "	|
 git push origin master 
