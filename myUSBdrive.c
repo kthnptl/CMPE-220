@@ -2,54 +2,111 @@
 #include <linux/kernel.h>
 #include <linux/usb.h>
 
-// probe function
+/* This function is called automatically when we insert an USB device provided this driver
+*  is installed successfully. if this function is not being called one of the reasons can be that 
+*  some other USB driver has access to USB bus and probe function of its driver is being called 
+*  everytime when we insert USB. You can check which driver is working and which is being called 
+*  by a debugging methode provided by Linux. Terminal command for this is dmesg. It lists out all
+*  the debug messages printed out by different drivers. Try " dmesg | grep -i <your tag here> " 
+*  command for filtering debug messages which has tag same as you mentioned in command. Thus, make  
+*  sure you keep tag in your message. Anything before ":" in printk() is counted as tag.
+*/
 static int pen_probe(struct usb_interface *interface, const struct usb_device_id *id)
 {
-	printk(KERN_INFO " USB Drive (%04X:%04X) plugged\n", id->idVendor, id->idProduct);
+	printk(KERN_ALERT "CMPE-220: USB Drive (%04X:%04X) plugged\n", id->idVendor, id->idProduct);
 	return 0;
 }
 
-// Disconnect function
+
+/* This function is being called automatically when we remove an USB device. If probe function 
+*  of this driver is working then this function will work for sure. 
+*/
+
 static void pen_disconnect(struct usb_interface *interface)
 {
-	printk(KERN_INFO " USB Drive removed.");
+	printk(KERN_ALERT "CMPE-220: USB Drive removed.");
 }
 
-// usb_device_id
+
+
+/* This is the list of USB devices supported by this driver.
+*  it is in pair of Vendor ID and Product ID of USB device.
+*  The last {} blank entry is called termination entry. 
+*/
 static struct usb_device_id pen_table[] = 
 {
-	{USB_DEVICE(0x054c,0x09c2)},
+	// (VendorID, ProductID)
+	{USB_DEVICE(0x054c,0x09c2)},	
+	{USB_DEVICE(0x8564,0x1000)},
+	{USB_DEVICE(0x0bc2,0xab26)},
 	{}
 };
+
+
+/* We register this array of supported USB devices by following function. Thus, whenever we
+*  insert USB device, its vendor ID and Product ID is searched in this list and served if it 
+*  is found there.
+*/
 MODULE_DEVICE_TABLE(usb,pen_table);
 
-// usb_driver
+
+/* This is the main structure of device driver, where we register all our functions
+*  to the default calling functions. 
+*/
 static struct usb_driver pen_driver = 
 {
 	.name = "USB stick driver",
-	.id_table = pen_table,		// usb_device_id
+	.id_table = pen_table,		
 	.probe = pen_probe,
 	.disconnect = pen_disconnect,
+//        .fops        = &my_fops,
+//        .minor       = USB_SKEL_MINOR_BASE,
 };
 
+
+/* This is a function which plays role in installing the USB driver and registering 
+*  it in kernel. To register it in kernel it uses the function given by Linux distro  
+*  called usb_resigter(). This returns a value which indicates the result of registration.
+*  It returns 0 on succsess and negative values on failure. 
+*/
 static int __init pen_init(void)
 {
-	int val = -1;
-	printk(KERN_INFO "Installing my USB Driver.");
-	printk(KERN_INFO "Registering driver in kernal");
-	val = usb_register(&pen_driver);
-	printk(KERN_INFO "Registration complete.");
-	return val;
+	int result = -2;
+	printk(KERN_ALERT "CMPE-220: Installing my USB Driver.");
+
+        /* register this driver with the USB subsystem */
+        result = usb_register(&pen_driver);
+        if (result < 0) {
+                printk(KERN_ALERT "CMPE-220: usb_register failed. error- %d", result);
+                return -1;
+        }
+
+        return result;
 }
 
+
+/* This is a function which plays role in uninstalling the USB driver and deregistering 
+*  it in kernel. To deregister it in kernel it uses the function given by Linux distro  
+*  called usb_deresigter().
+*/
 static void __exit pen_exit(void)
 {
-	printk(KERN_INFO "Uninstalling my USB driver");
+	printk(KERN_ALERT "CMPE-220: Uninstalling my USB driver");
 	usb_deregister(&pen_driver);
-	printk(KERN_INFO "Successfully Uninstalled.");
 }
 
+/* Here we are registering our driver-installation function to the function provided by
+*  Linux distro called module_init(). Important to mention that in Linux drivers are called
+*  modules. To see the list of modules running in background can be checked by command lsmod.
+*  It shows list of all the modules working in background. Try lsmod | grep -i usb to filer 
+*  modules with usb word in it.
+*/
 module_init(pen_init);
+
+/* Here we are registering our driver-installation function to the function provided by
+*  Linux distro called module_exit(). It indicates that whenever user wants to uninstall
+*  this driver, call pen_exit function.
+*/
 module_exit(pen_exit);
 
 MODULE_LICENSE("GPL");
