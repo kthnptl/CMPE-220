@@ -2,6 +2,7 @@
 #include <linux/kernel.h>
 #include <linux/usb.h>
 
+/*------------------------------- #include<usb.h> -------------------------------*/
 /* This function is called automatically when we insert an USB device provided this driver
 *  is installed successfully. if this function is not being called one of the reasons can be that 
 *  some other USB driver has access to USB bus and probe function of its driver is being called 
@@ -13,7 +14,15 @@
 */
 static int pen_probe(struct usb_interface *interface, const struct usb_device_id *id)
 {
-	printk(KERN_ALERT "CMPE-220: USB Drive (%04X:%04X) plugged\n", id->idVendor, id->idProduct);
+	struct usb_device *connected_device;
+	connected_device = interface_to_usbdev(interface);
+	printk(KERN_ERR "CMPE-220: new USB drive plugged\n");
+	printk(KERN_ERR "CMPE-220: Vendor ID: %04X, Product ID: %04X\n", id->idVendor, id->idProduct);
+	printk(KERN_ERR "CMPE-220: USB Drive (%04X:%04X) plugged\n", id->idVendor, id->idProduct);
+	printk(KERN_ERR "CMPE-220: Name: %s \n",connected_device->product);
+	printk(KERN_ERR "CMPE-220: Manufacturer: %s\n",connected_device->manufacturer);
+	printk(KERN_ERR "CMPE-220: serial: %s",connected_device->serial);
+	//dev_alert(&interface->dev,"CMPE-220: device now attached\n");
 	return 0;
 }
 
@@ -24,7 +33,7 @@ static int pen_probe(struct usb_interface *interface, const struct usb_device_id
 
 static void pen_disconnect(struct usb_interface *interface)
 {
-	printk(KERN_ALERT "CMPE-220: USB Drive removed.");
+	printk(KERN_ERR "CMPE-220: USB Drive removed.");
 }
 
 
@@ -72,15 +81,16 @@ static struct usb_driver pen_driver =
 static int __init pen_init(void)
 {
 	int result = -2;
-	printk(KERN_ALERT "CMPE-220: Installing my USB Driver.");
+	printk(KERN_ERR "CMPE-220: Installing my USB Driver.");
 
         /* register this driver with the USB subsystem */
         result = usb_register(&pen_driver);
         if (result < 0) {
-                printk(KERN_ALERT "CMPE-220: usb_register failed. error- %d", result);
+                printk(KERN_ERR "CMPE-220: usb_register failed. error- %d", result);
                 return -1;
         }
-
+	
+	printk(KERN_ERR "CMPE-220: usb registration successful.");
         return result;
 }
 
@@ -91,10 +101,11 @@ static int __init pen_init(void)
 */
 static void __exit pen_exit(void)
 {
-	printk(KERN_ALERT "CMPE-220: Uninstalling my USB driver");
+	printk(KERN_ERR "CMPE-220: Uninstalling my USB driver");
 	usb_deregister(&pen_driver);
 }
 
+/*------------------------------- #include<module.h> -------------------------------*/
 /* Here we are registering our driver-installation function to the function provided by
 *  Linux distro called module_init(). Important to mention that in Linux drivers are called
 *  modules. To see the list of modules running in background can be checked by command lsmod.
