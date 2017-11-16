@@ -1,6 +1,77 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/usb.h>
+#include <linux/fs.h> // required for various structures related to files liked fops.
+#include <asm/uaccess.h> // required for copy_from and copy_to user functions
+
+#define MIN(a,b) (((a) <= (b)) ? (a) : (b))
+#define BULK_EP_OUT 0x02
+#define BULK_EP_IN 0x81
+#define MAX_PKT_SIZE 512
+
+/*------------------------------- File operation  -------------------------------*/
+struct usb_device *connected_device;
+static struct usb_class_driver class;
+static unsigned char bulk_buf[MAX_PKT_SIZE];
+
+static int pen_open(struct inode *i, struct file *f)
+{
+	return 0;
+}
+static int pen_close(struct inode *i, struct file *f)
+{
+	return 0;
+}
+static ssize_t pen_read(struct file *f, char __user *buf, size_t cnt, loff_t *off)
+{
+	int retval;
+	int read_cnt;
+
+	/* Read the data from the bulk endpoint */
+	retval = usb_bulk_msg(connected_device, usb_rcvbulkpipe(connected_device, BULK_EP_IN),
+			bulk_buf, MAX_PKT_SIZE, &read_cnt, 5000);
+	if (retval)
+	{
+		printk(KERN_ERR "Bulk message returned %d\n", retval);
+		return retval;
+	}
+	if (raw_copy_to_user(buf, bulk_buf, MIN(cnt, read_cnt)))
+	{
+		return -EFAULT;
+	}
+
+	return MIN(cnt, read_cnt);
+}
+static ssize_t pen_write(struct file *f, const char __user *buf, size_t cnt,loff_t *off)
+{
+	int retval;
+	int wrote_cnt = MIN(cnt, MAX_PKT_SIZE);
+
+	if (raw_copy_from_user(bulk_buf, buf, MIN(cnt, MAX_PKT_SIZE)))
+	{
+		return -EFAULT;
+	}
+
+	/* Write the data into the bulk endpoint */
+	retval = usb_bulk_msg(connected_device, usb_sndbulkpipe(connected_device, BULK_EP_OUT),
+			bulk_buf, MIN(cnt, MAX_PKT_SIZE), &wrote_cnt, 5000);
+	if (retval)
+	{
+		printk(KERN_ERR "Bulk message returned %d\n", retval);
+		return retval;
+	}
+
+	return wrote_cnt;
+}
+
+static struct file_operations my_fops =
+{
+	.owner = THIS_MODULE,
+	.open = pen_open,
+	.release = pen_close,
+	.read = pen_read,
+	.write = pen_write,
+};
 
 /*------------------------------- #include<usb.h> -------------------------------*/
 /* This function is called automatically when we insert an USB device provided this driver
@@ -14,16 +85,30 @@
 */
 static int pen_probe(struct usb_interface *interface, const struct usb_device_id *id)
 {
-	struct usb_device *connected_device;
+	int retval;
 	connected_device = interface_to_usbdev(interface);
+	
+	class.name = "usb/pen%d";
+	class.fops = &my_fops;
+
 	printk(KERN_ERR "CMPE-220: new USB drive plugged\n");
 	printk(KERN_ERR "CMPE-220: Vendor ID: %04X, Product ID: %04X\n", id->idVendor, id->idProduct);
-	printk(KERN_ERR "CMPE-220: USB Drive (%04X:%04X) plugged\n", id->idVendor, id->idProduct);
-	printk(KERN_ERR "CMPE-220: Name: %s \n",connected_device->product);
+	printk(KERN_ERR "CMPE-220: Type: %s \n",connected_device->product);
 	printk(KERN_ERR "CMPE-220: Manufacturer: %s\n",connected_device->manufacturer);
 	printk(KERN_ERR "CMPE-220: serial: %s",connected_device->serial);
-	//dev_alert(&interface->dev,"CMPE-220: device now attached\n");
-	return 0;
+	dev_alert(&interface->dev,"CMPE-220: device now attached\n");
+
+	if ((retval = usb_register_dev(interface, &class)) < 0)
+	{
+		/* Something prevented us from registering this driver */
+		printk(KERN_ERR "Not able to get a minor for this device.");
+	}
+	else
+	{
+		printk(KERN_INFO "Minor obtained: %d\n", interface->minor);
+	}
+
+	return retval;
 }
 
 
@@ -34,6 +119,7 @@ static int pen_probe(struct usb_interface *interface, const struct usb_device_id
 static void pen_disconnect(struct usb_interface *interface)
 {
 	printk(KERN_ERR "CMPE-220: USB Drive removed.");
+	usb_deregister_dev(interface, &class);
 }
 
 
@@ -68,8 +154,6 @@ static struct usb_driver pen_driver =
 	.id_table = pen_table,		
 	.probe = pen_probe,
 	.disconnect = pen_disconnect,
-//        .fops        = &my_fops,
-//        .minor       = USB_SKEL_MINOR_BASE,
 };
 
 
