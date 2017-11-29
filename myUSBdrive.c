@@ -5,7 +5,10 @@
 #include <linux/slab.h>
 #include <linux/uaccess.h>
 #include <linux/mutex.h>
+#include <linux/fs.h>
 
+
+/* Code that makes this USB device a character device */
 #define USB_DEMO_MINOR_BASE     100
 
 static struct mutex usb_mutex;
@@ -375,6 +378,7 @@ static struct usb_device_id supported_device[] = {
 	{USB_DEVICE(0x054c,0x09c2)},	
 	{USB_DEVICE(0x8564,0x1000)},
 	{USB_DEVICE(0x0bc2,0xab26)},
+	{USB_DEVICE(0x0403,0x6001)},
 	{}
 };
 
