@@ -5,10 +5,7 @@
 #include <linux/slab.h>
 #include <linux/uaccess.h>
 #include <linux/mutex.h>
-#include <linux/fs.h>
 
-
-/* Code that makes this USB device a character device */
 #define USB_DEMO_MINOR_BASE     100
 
 static struct mutex usb_mutex;
@@ -38,7 +35,8 @@ static void usb_delete(struct kref *krf) {
 static struct usb_driver my_usb_driver;
 
 //Open Callback (file operation):
-static int file_open(struct inode *inode, struct file *filp) {
+static int file_open(struct inode *inode, struct file *filp) 
+{
 	struct usb_demo      *dev;
 	struct usb_interface *interface;
 	int subminor;
@@ -88,7 +86,7 @@ static int file_close(struct inode *inode, struct file *filp) {
 static ssize_t file_read(struct file *filp, char __user *buffer, size_t count, loff_t *ppos) {
 	struct usb_demo *dev = (struct usb_demo *) filp->private_data;
 	int retval = 0;
-
+	
 	printk(KERN_ALERT "CMPE 220: usb read method called\n");
 
 	//Blocking bulk read to get data from the device:
@@ -165,7 +163,7 @@ static ssize_t file_write(struct file *filp, const char __user * buffer, size_t 
 		retval = -ENOMEM;
 		goto error;
 	}
-
+	
 	if(copy_from_user(buf, buffer, count)) {
 		printk(KERN_ALERT "CMPE 220: copy_from_user failed in file_write\n");
 		retval = -EFAULT;
@@ -290,7 +288,6 @@ static int probe(struct usb_interface *interface,
 				printk(KERN_ALERT "CMPE 220: Could not allocate bulk in buffer\n");
 				goto error;
 			}
-			
 		}
 
 		if(!dev->bulk_out_endpoint_addr &&
@@ -301,14 +298,12 @@ static int probe(struct usb_interface *interface,
 			//bulk out endpoint:
 
 			dev->bulk_out_endpoint_addr = endpoint->bEndpointAddress;
-
 		}
 	}
 
 	if(!dev->bulk_in_endpoint_addr && !dev->bulk_out_endpoint_addr) {
 		printk(KERN_ALERT "CMPE 220: Could not find either bulk in endpoint or"
 				  " bulk out endpoint\n");
-
 		goto error;
 	}
 
@@ -320,7 +315,8 @@ static int probe(struct usb_interface *interface,
 	//Ready to be used:
 	retval = usb_register_dev(interface, &demo_class);
 
-	if(retval) {
+	if(retval) 
+	{
 		printk(KERN_ALERT "CMPE 220: Error registering Driver to the USB Core\n");
 		printk(KERN_ALERT "CMPE 220: Not able to get minor for the Device\n");
 		//Unset the pointer to our data on the device:
@@ -329,8 +325,7 @@ static int probe(struct usb_interface *interface,
 	}
 
 	printk(KERN_ALERT "CMPE 220: USB Device now attached to USBDemo-%d", interface->minor);
-	printk(KERN_ALERT "CMPE 220: USB Device: Vendor ID: %04x, Product ID: %04x\n",
-			 id->idVendor, id->idProduct);
+	printk(KERN_ALERT "CMPE 220: USB Device: Vendor ID: %04x, Product ID: %04x\n",id->idVendor, id->idProduct);
 	return 0;
 
 error:
@@ -371,14 +366,16 @@ static void disconnected(struct usb_interface *interface) {
 *  it is in pair of Vendor ID and Product ID of USB device.
 *  The last {} blank entry is called termination entry. 
 */
-
 static struct usb_device_id supported_device[] = {
 
-		//{ USB_DEVICE(USB_DEMO_VENDOR_ID, USB_DEMO_PRODUCT_ID)  },
+//{ USB_DEVICE(USB_DEMO_VENDOR_ID, USB_DEMO_PRODUCT_ID)  },
+	{USB_DEVICE(0x04ca,0x0061)},
+	{USB_DEVICE(0x0bda,0x0129)},
 	{USB_DEVICE(0x054c,0x09c2)},	
 	{USB_DEVICE(0x8564,0x1000)},
 	{USB_DEVICE(0x0bc2,0xab26)},
 	{USB_DEVICE(0x0403,0x6001)},
+	{USB_DEVICE(0x22d9,0x2773)},
 	{}
 };
 
@@ -388,6 +385,10 @@ MODULE_DEVICE_TABLE(usb, supported_device);
 /* This is the main structure of device driver, where we register all our functions
 *  to the default calling functions. 
 */
+
+
+
+
 static struct usb_driver my_usb_driver = {
 	.name = "my_usb_driver",
 	.id_table = supported_device,

@@ -7,13 +7,9 @@ if find /dev/ -name "demo*" -print -quit | grep -q .
 then
 
 #if usb device is inserted then try to read from it.
-#sudo cat /dev/demo* #>> received.txt
-
-#try to write a character in it
-#sudo echo 'a' >> /dev/demo*
-
-#try to copy a text file in that file
-sudo cp ~/Downloads/resumes\ and\ CL/resume.pdf /dev/demo*
+echo "Press any key to read data... "
+read key
+sudo cat /dev/demo* #>> received.txt
 
 echo "\n-------------------------------------------------------------------------------------" >> log.txt
 echo "--------------------------- " $(date) "---------------------------" >> log.txt
