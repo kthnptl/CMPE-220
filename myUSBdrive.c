@@ -259,9 +259,10 @@ static int probe(struct usb_interface *interface,
 	printk(KERN_ALERT "CMPE-220: Name: %s \n",connected_device->product);
 	printk(KERN_ALERT "CMPE-220: Manufacturer: %s\n",connected_device->manufacturer);
 	printk(KERN_ALERT "CMPE-220: serial: %s",connected_device->serial);
+	printk(KERN_ALERT "CMPE-220: Vendor id: 0x%x Product id: 0x%x",id->idVendor, id->idProduct);
 	printk(KERN_ALERT "CMPE 220: USB interface %d probed\n", iface_desc->desc.bInterfaceNumber);
 	printk(KERN_ALERT "CMPE 220: bNumEndpoints 0x%02x\n", iface_desc->desc.bNumEndpoints);
-	printk(KERN_ALERT "CMPE 220: bInterfaceClass 0x%02x\n", iface_desc->desc.bInterfaceClass);
+	printk(KERN_ALERT "CMPE 220: bInterfaceClass 0x%02x\n\n", iface_desc->desc.bInterfaceClass);
 
 	for(i = 0; i < iface_desc->desc.bNumEndpoints; i++) {
 		endpoint = &iface_desc->endpoint[i].desc;
@@ -325,7 +326,6 @@ static int probe(struct usb_interface *interface,
 	}
 
 	printk(KERN_ALERT "CMPE 220: USB Device now attached to USBDemo-%d", interface->minor);
-	printk(KERN_ALERT "CMPE 220: USB Device: Vendor ID: %04x, Product ID: %04x\n",id->idVendor, id->idProduct);
 	return 0;
 
 error:
@@ -368,15 +368,16 @@ static void disconnected(struct usb_interface *interface) {
 */
 static struct usb_device_id supported_device[] = {
 
-//{ USB_DEVICE(USB_DEMO_VENDOR_ID, USB_DEMO_PRODUCT_ID)  },
-	{USB_DEVICE(0x04ca,0x0061)},
-	{USB_DEVICE(0x0bda,0x0129)},
-	{USB_DEVICE(0x054c,0x09c2)},	
-	{USB_DEVICE(0x8564,0x1000)},
-	{USB_DEVICE(0x0bc2,0xab26)},
-	{USB_DEVICE(0x0403,0x6001)},
-	{USB_DEVICE(0x22d9,0x2773)},
-	{}
+//{ USB_DEVICE(VEND_ID,PROD_ID)},
+	{USB_DEVICE(0x04ca,0x0061)},	// USB optical mouse
+	{USB_DEVICE(0x0bda,0x0129)},	// Brother Printer
+	{USB_DEVICE(0x054c,0x09c2)},	// Sony USB memory 	
+	{USB_DEVICE(0x8564,0x1000)},	// JetFlash USB memory 
+	{USB_DEVICE(0x0bc2,0xab26)},	// Seagate 1TB harddrive
+	{USB_DEVICE(0x0403,0x6001)},	// SJone board
+	{USB_DEVICE(0x22d9,0x2773)},	//
+	//{USB_DEVICE(0x1d27,0x0601)},	// Depth camera
+	{}								//Terminating entry
 };
 
 MODULE_DEVICE_TABLE(usb, supported_device);
